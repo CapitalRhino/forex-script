@@ -23,6 +23,7 @@ if ($dayCount -eq $null) {
 <# clear existing $outputFile #>
 if ((Test-Path $outputFile) -eq $true) {
   Remove-Item $outputFile
+  Write-Host "INFO: Cleared existing output file."
 }
 
 <# UNIX time converter #>
@@ -55,6 +56,7 @@ ForEach ($forex in $data) {
     <# API connection #>
     $WebClient = New-Object System.Net.WebClient
     $WebClient.DownloadFile($downloadURL, $localURL)
+    Write-Host "INFO: $symbol downloaded."
 
     <# import downloaded CSV file #>
     $apiResponse = Import-Csv $localURL
@@ -69,4 +71,5 @@ ForEach ($forex in $data) {
         })
         $objResults | Export-Csv -Append -NoTypeInformation -Path $outputFile
     }
+    Write-Host "INFO: $symbol complete."
 }
