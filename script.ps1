@@ -1,6 +1,6 @@
 ﻿<#
     Forex Scraping Script
-    
+    (using Yahoo Finance CSV endpoint API v7)
 #>
 
 <# parameter definition #>
@@ -13,8 +13,16 @@ if (!(Test-Path -Path inputfile.csv -PathType Leaf) -and ($inputFile -eq $null))
 if (Test-Path -Path inputfile.csv -PathType Leaf) {
     $inputFile = (Get-Item inputfile.csv)
 }
+if ($outputFile -eq $null) {
+    $outputFile = "export.csv"
+}
 if ($dayCount -eq $null) {
     $dayCount = read-host -Prompt "Please enter a number of days" 
+}
+
+<# clear existing $outputFile #>
+if ((Test-Path $outputFile) -eq $true) {
+  Remove-Item $outputFile
 }
 
 <# UNIX time converter #>
@@ -27,22 +35,35 @@ $period1 = [int]($startDay - $epoch).TotalSeconds
 <# parse input CSV and scrape Yahoo Finance  #>
 $data = Import-Csv $inputFile
 ForEach ($forex in $data) {
-    $baseCurrency = $($forex.from)
-    $counterCurrency = $($forex.to)
+    <# CSV input fields #>
+    $symbol = "$($forex.from)$($forex.to)"
     $forexID = $($forex.forex_id)
-    $url = [System.Text.StringBuilder]::new()
-    $url.Append("https://query1.finance.yahoo.com/v7/finance/download/")
-    $url.Append($baseCurrency)
-    $url.Append($counterCurrency)
-    $url.Append("=X?period1=")
-    $url.Append($period1)
-    $url.Append("&period2=")
-    $url.Append($period2)
-    $url.Append("&interval=1d&events=history&includeAdjustedClose=true")
-    Write-Host $url
-    Invoke-WebRequest $url.ToString()
-}
 
-<# TODO: save CSV file 
-New-Item -Path $outputFile -ItemType File
-#>
+    <# URL building #>
+    $url = [System.Text.StringBuilder]::new()
+    [void]$url.Append('https://query1.finance.yahoo.com/v7/finance/download/')
+    [void]$url.Append($symbol)
+    [void]$url.Append('=X?period1=')
+    [void]$url.Append($period1)
+    [void]$url.Append('&period2=')
+    [void]$url.Append($period2)
+    [void]$url.Append('&interval=1d&events=history&includeAdjustedClose=true')
+
+    $downloadURL = [uri]($url.ToString())
+    $localURL = "$(Split-Path $MyInvocation.MyCommand.Path)\$($downloadURL.segments[-1])"
+
+    $WebClient = New-Object System.Net.WebClient
+    $WebClient.DownloadFile($downloadURL, $localURL)
+
+    $apiResponse = Import-Csv $localURL
+
+    ForEach ($row in $apiResponse) {
+        $objResults = New-Object PSObject -Property ([ordered]@{
+            forex_id = $forexID;
+            symbol   = $symbol;
+            date     = $($row.Date);
+            rate     = $($row.Close);
+        })
+        $objResults | Export-Csv -Append -NoTypeInformation -Path $outputFile
+    }
+}
