@@ -10,7 +10,7 @@ param ($inputFile, $outputFile, $dayCount)
 if (!(Test-Path -Path inputfile.csv -PathType Leaf) -and ($inputFile -eq $null)) {
     Throw [string]"Input CSV file required for execution."
 }
-if (Test-Path -Path inputfile.csv -PathType Leaf) {
+if (!(Test-Path -Path inputfile.csv -PathType Leaf)) {
     $inputFile = (Get-Item inputfile.csv)
 }
 if ($outputFile -eq $null) {
@@ -52,11 +52,14 @@ ForEach ($forex in $data) {
     $downloadURL = [uri]($url.ToString())
     $localURL = "$(Split-Path $MyInvocation.MyCommand.Path)\$($downloadURL.segments[-1])"
 
+    <# API connection #>
     $WebClient = New-Object System.Net.WebClient
     $WebClient.DownloadFile($downloadURL, $localURL)
 
+    <# import downloaded CSV file #>
     $apiResponse = Import-Csv $localURL
 
+    <# add one-by-one output lines #>
     ForEach ($row in $apiResponse) {
         $objResults = New-Object PSObject -Property ([ordered]@{
             forex_id = $forexID;
