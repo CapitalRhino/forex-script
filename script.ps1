@@ -7,11 +7,11 @@
 param ($inputFile, $outputFile, $dayCount)
 
 <# paramater validation #>
-if (!(Test-Path -Path inputfile.csv -PathType Leaf) -and ($inputFile -eq $null)) {
+if (!(Test-Path -Path "inputfile.csv" -PathType Leaf) -and ($inputFile -eq $null)) {
     Throw [string]"Input CSV file required for execution."
 }
-if (!(Test-Path -Path inputfile.csv -PathType Leaf)) {
-    $inputFile = (Get-Item inputfile.csv)
+if (!(Test-Path -Path "inputfile.csv" -PathType Leaf)) {
+    $inputFile = (Get-Item "inputfile.csv")
 }
 if ($outputFile -eq $null) {
     $outputFile = "export.csv"
