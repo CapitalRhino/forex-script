@@ -17,7 +17,7 @@ if ($outputFile -eq $null) {
     $outputFile = "export.csv"
 }
 if ($dayCount -eq $null) {
-    $dayCount = read-host -Prompt "Please enter a number of days" 
+    $dayCount = 1
 }
 
 <# clear existing $outputFile #>
